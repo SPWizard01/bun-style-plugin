@@ -12,6 +12,7 @@
   "repository": "https://github.com/SPWizard01/bun-style-plugin",
   "homepage": "https://github.com/SPWizard01/bun-style-plugin",
   "bugs": "https://github.com/SPWizard01/bun-style-plugin/issues",
+  "readme": "README.md",
   "license": "MIT",
   "files": [
     "dist"
