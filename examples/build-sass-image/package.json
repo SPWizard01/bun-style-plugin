@@ -6,7 +6,7 @@
     "build": "bun run ./build.ts"
   },
   "dependencies": {
-    "bun-scss-loader": "link:bun-scss-loader"
+    "bun-style-plugin": "link:bun-style-plugin"
   },
   "devDependencies": {
     "@types/bun": "^1.2.2"

@@ -1,7 +1,7 @@
 {
   "name": "bun-style-plugin",
   "description": "Bun plugin to allow loading css, sass files, and modules",
-  "version": "0.9.1",
+  "version": "1.0.1",
   "type": "module",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -30,7 +30,7 @@
     "./utils": "./dist/utils.js"
   },
   "scripts": {
-    "prepublish": "rm -rf types && tsc -p tsconfig.build.json"
+    "prepare": "bun run build.ts"
   },
   "peerDependencies": {
     "typescript": "^5.7.3"

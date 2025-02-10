@@ -1,5 +1,5 @@
 import styles, { code } from './style.module.css';
-import { insertStyleElement } from 'bun-scss-loader/utils';
+import { insertStyleElement } from 'bun-style-plugin/utils';
 
 insertStyleElement(code);
 

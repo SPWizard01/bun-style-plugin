@@ -7,7 +7,7 @@
     "build": "bun run ."
   },
   "dependencies": {
-    "bun-scss-loader": "link:bun-scss-loader"
+    "bun-style-plugin": "link:bun-style-plugin"
   },
   "devDependencies": {
     "bun-types": "latest"

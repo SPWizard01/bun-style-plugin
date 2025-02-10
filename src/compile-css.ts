@@ -1,5 +1,5 @@
 import type { OnLoadResult } from "bun";
-
+import { transform, browserslistToTargets } from "lightningcss-wasm"
 export type CompileOptions = {
   minify?: boolean;
   cssModules?: boolean;
@@ -8,11 +8,10 @@ export type CompileOptions = {
 };
 
 export default async function compileCSS(content: string, path: string, options: CompileOptions = {}): Promise<OnLoadResult> {
-  const css = await import("lightningcss-wasm");
   const imports: string[] = [];
   const urlImports: string[] = [];
-  const targets = options.targets?.length ? css.browserslistToTargets(options.targets) : undefined;
-  const { code, exports, dependencies } = css.transform({
+  const targets = options.targets?.length ? browserslistToTargets(options.targets) : undefined;
+  const { code, exports, dependencies } = transform({
     filename: path,
     code: Uint8Array.from(Buffer.from(content)),
     cssModules: Boolean(options.cssModules),
@@ -57,7 +56,7 @@ export default async function compileCSS(content: string, path: string, options:
   const exported = imports.map((_, i) => `_css${i}`).join(" + ");
 
   const codeExport = exported ? `${exported} + ${withResolver}` : withResolver;
-  
+
   const exportContent = options.cssModules ? `
     export const code = ${codeExport};
     export default ${JSON.stringify(nameMap)};

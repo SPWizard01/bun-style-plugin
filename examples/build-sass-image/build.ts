@@ -1,4 +1,4 @@
-import { styleLoader } from "bun-scss-loader"
+import { styleLoader } from "bun-style-plugin"
 
 await Bun.build({
   entrypoints: ['./index.ts'],
