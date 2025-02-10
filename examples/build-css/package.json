@@ -1,0 +1,15 @@
+{
+  "name": "build-css",
+  "module": "index.js",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "bun run ./build.js"
+  },
+  "dependencies": {
+    "bun-scss-loader": "link:bun-scss-loader"
+  },
+  "devDependencies": {
+    "bun-types": "latest"
+  }
+}

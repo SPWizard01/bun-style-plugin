@@ -1,0 +1,44 @@
+{
+  "name": "bun-style-plugin",
+  "description": "Bun plugin to allow loading css, sass files, and modules",
+  "version": "0.9.1",
+  "type": "module",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "author": {
+    "name": "SPWizard01",
+    "url": "https://github.com/SPWizard01/bun-style-plugin"
+  },
+  "repository": "https://github.com/SPWizard01/bun-style-plugin",
+  "homepage": "https://github.com/SPWizard01/bun-style-plugin",
+  "bugs": "https://github.com/SPWizard01/bun-style-plugin/issues",
+  "license": "MIT",
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "bun",
+    "plugin",
+    "style",
+    "loader",
+    "css",
+    "sass",
+    "scss"
+  ],
+  "exports": {
+    ".": "./dist/index.js",
+    "./utils": "./dist/utils.js"
+  },
+  "scripts": {
+    "prepublish": "rm -rf types && tsc -p tsconfig.build.json"
+  },
+  "peerDependencies": {
+    "typescript": "^5.7.3"
+  },
+  "dependencies": {
+    "@types/bun": "^1.2.2",
+    "lightningcss-wasm": "^1.29.1",
+    "sass": "^1.84.0",
+    "sass-embedded": "^1.83.4"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "name": "build-sass",
+  "module": "index.js",
+  "type": "module",
+  "scripts": {
+    "build": "bun run ./build.js"
+  },
+  "dependencies": {
+    "bun-scss-loader": "link:bun-scss-loader"
+  },
+  "devDependencies": {
+    "bun-types": "latest"
+  }
+}
