@@ -6,17 +6,17 @@ This package comes with functionality to resolve assets dynamically during runti
 
 ## Usage
 
-To get begin, install the `bun-scss-loader` package using the following commands:
+To get begin, install the `bun-style-plugin` package using the following commands:
 
 ```shell
-npm install --save-dev bun-scss-loader
+npm install --save-dev bun-style-plugin
 npm install --save-dev sass # Required for compiling Sass (only when needed)
 ```
 
 Next, add the plugin to your build script:
 
 ```js
-import styleLoader from 'bun-scss-loader';
+import styleLoader from 'bun-style-plugin';
 
 Bun.build({
   ...
@@ -35,16 +35,16 @@ import styles from './styles.css';
 console.log(styles); // string of the css file
 ```
 
-By following these steps, you integrate bun-scss-loader into your project, allowing you to effortlessly import and use CSS, SASS, and CSS modules in your application.
+By following these steps, you integrate bun-style-plugin into your project, allowing you to effortlessly import and use CSS, SASS, and CSS modules in your application.
 
 ## Using at Runtime
 
-To incorporate the `bun-scss-loader` at runtime, follow these steps. Assume you are creating a preloaded script named `preload.ts`:
+To incorporate the `bun-style-plugin` at runtime, follow these steps. Assume you are creating a preloaded script named `preload.ts`:
 
 ```js
 // preload.ts
 import { plugin } from 'bun';
-import styleLoader from 'bun-scss-loader';
+import styleLoader from 'bun-style-plugin';
 
 await plugin(styleLoader(/* options here */));
 ```
@@ -62,10 +62,10 @@ Please note that it is crucial to insert the `await` keyword before the `plugin`
 
 ### targets
 
-Lightning CSS, which `bun-scss-loader` relies on, does not perform automatic transpilation of CSS syntax for older browsers by default. To support older browsers, you can manually specify target browsers as follows:
+Lightning CSS, which `bun-style-plugin` relies on, does not perform automatic transpilation of CSS syntax for older browsers by default. To support older browsers, you can manually specify target browsers as follows:
 
 ```js
-import styleLoader from 'bun-scss-loader';
+import styleLoader from 'bun-style-plugin';
 
 Bun.build({
   ...
@@ -86,7 +86,7 @@ Bun.build({
 Alternatively, you can easily generate the list of target browsers using the `browserslist` package:
 
 ```js
-import styleLoader from 'bun-scss-loader';
+import styleLoader from 'bun-style-plugin';
 import browserslist from 'browserslist';
 
 Bun.build({
@@ -100,16 +100,16 @@ Bun.build({
 });
 ```
 
-This approach streamlines the configuration process, ensuring that your styles are appropriately transpiled for a broader range of browsers. To see how it works, refer to the `runtime-ts` example in [the repository](https://github.com/SPWizard01/bun-scss-loader).
+This approach streamlines the configuration process, ensuring that your styles are appropriately transpiled for a broader range of browsers. To see how it works, refer to the `runtime-ts` example in [the repository](https://github.com/SPWizard01/bun-style-plugin).
 
 ## Insert CSS to DOM
 
-The plugin does NOT automatically insert the CSS into the DOM. Instead, it provides the CSS either as a string or as key-value pairs in the case of CSS modules. To incorporate the CSS into the DOM, you need to manually utilize the `insertStyleElement`` function from `bun-scss-loader/utils`.
+The plugin does NOT automatically insert the CSS into the DOM. Instead, it provides the CSS either as a string or as key-value pairs in the case of CSS modules. To incorporate the CSS into the DOM, you need to manually utilize the `insertStyleElement`` function from `bun-style-plugin/utils`.
 
 Example for plain CSS:
 
 ```js
-import { insertStyleElement } from 'bun-scss-loader/utils';
+import { insertStyleElement } from 'bun-style-plugin/utils';
 import styles from './styles.css';
 
 insertStyleElement(styles);
@@ -126,7 +126,7 @@ Example for CSS modules:
 
 ```js
 // app.js
-import { insertStyleElement } from 'bun-scss-loader/utils';
+import { insertStyleElement } from 'bun-style-plugin/utils';
 import styles, { code } from './styles.module.css';
 
 insertStyleElement(styles, code);
@@ -165,7 +165,7 @@ These type declarations allow you to use CSS modules and plain CSS files in your
 
 ## Support
 
-If you encounter any issues, or have question regarding the `bun-scss-loader`, please visit the [GitHub Issues](https://github.com/SPWizard01/bun-scss-loader/issues) page to review existing topics or to file a new one.
+If you encounter any issues, or have question regarding the `bun-style-plugin`, please visit the [GitHub Issues](https://github.com/SPWizard01/bun-style-plugin/issues) page to review existing topics or to file a new one.
 
 ## License
 

@@ -1,6 +1,7 @@
 import type { BunPlugin } from "bun";
 import compileCSS from "./compile-css";
-
+import type { Options as EmbeddedOptions } from "sass-embedded"
+import type { Options as RegularOptions } from "sass"
 /**
  * No options for now
  */
@@ -16,11 +17,13 @@ export type StyleLoaderOptions = {
    */
   processUrlImports?: boolean;
   precompile?(source: string, path: string): string;
+  cssModules?: boolean;
   /**
    * Use embedded sass compiler or default sass compiler
    * Default: true
    */
   useSassEmbedded?: boolean;
+  sassCompilerOptions?: RegularOptions<"async"> & EmbeddedOptions<"async">;
 };
 
 const defaultOptions: StyleLoaderOptions = {
@@ -95,7 +98,7 @@ export function styleLoader(options: StyleLoaderOptions = {}): BunPlugin {
         const isCssModule = args.path.endsWith(".module.css");
         const precompiled = opts.precompile?.(contents, args.path) ?? contents;
         return compileCSS(precompiled, args.path, {
-          cssModules: isCssModule,
+          cssModules: isCssModule && opts.cssModules,
           targets: opts.targets,
           minify: opts.minify,
           processUrlImports: opts.processUrlImports,
@@ -103,14 +106,13 @@ export function styleLoader(options: StyleLoaderOptions = {}): BunPlugin {
       });
 
       build.onLoad({ filter: /\.scss$/ }, async (args) => {
-        //const result = sass.compile(args.path);
-        const result = await compiler.compileAsync(args.path);
+        const result = await compiler.compileAsync(args.path, { ...opts.sassCompilerOptions });
         const isCssModule = args.path.endsWith(".module.scss");
         const precompiled = opts.precompile?.(result.css, args.path) ?? result.css;
         return compileCSS(precompiled, args.path, {
           targets: opts.targets,
           minify: opts.minify,
-          cssModules: isCssModule,
+          cssModules: isCssModule && opts.cssModules,
           processUrlImports: opts.processUrlImports,
         });
       });

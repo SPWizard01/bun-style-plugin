@@ -38,13 +38,19 @@ export default async function compileCSS(content: string, path: string, options:
   let importedUrls = ``
   let placehoders = `[`;
   if (urlImports.length > 0) {
-    const unique = new Map((dependencies || []).map(obj => [obj.placeholder, obj]));
+    const returnedDependencies = dependencies || [];
     importedUrls += `import { registerStyleImport } from "bun-style-plugin-registry";\n`;
-    unique.forEach((dep, index) => {
-      importedUrls += `import styleDependencyImport${index} from "${dep.url}";`
-      importedUrls += `registerStyleImport("${dep.placeholder}",styleDependencyImport${index});\n`
+    const importedDeps: string[] = [];
+    for (const element of urlImports) { 
+      const dep = returnedDependencies.find(dp => dp.url === element);
+      if(!dep) continue;
+      const importFriendlyPlaceholder = dep.placeholder.replace(/(?![a-zA-Z0-9])./g, "_");
+      if(importedDeps.includes(importFriendlyPlaceholder)) continue;
+      importedDeps.push(importFriendlyPlaceholder); 
+      importedUrls += `import sdi_${importFriendlyPlaceholder} from "${dep.url}";`
+      importedUrls += `registerStyleImport("${dep.placeholder}",sdi_${importFriendlyPlaceholder});\n`
       placehoders += `"${dep.placeholder}",`
-    });
+    }
   }
   placehoders += `]`;
   const codeString = code.toString();

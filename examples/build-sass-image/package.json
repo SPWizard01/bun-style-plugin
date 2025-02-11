@@ -9,6 +9,7 @@
     "bun-style-plugin": "link:bun-style-plugin"
   },
   "devDependencies": {
+    "@fluentui/react": "^8.122.9",
     "@types/bun": "^1.2.2"
   }
 }
