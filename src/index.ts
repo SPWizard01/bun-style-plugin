@@ -40,7 +40,7 @@ export function styleLoader(options: StyleLoaderOptions = {}): BunPlugin {
   const opts = { ...defaultOptions, ...options };
   let registryContents = ``;
   let resolverContents = ``;
-
+  let importerContents = ``;
   return {
     name: "bun-style-plugin",
     async setup(build) {
@@ -104,13 +104,13 @@ export function styleLoader(options: StyleLoaderOptions = {}): BunPlugin {
       });
 
       build.onLoad({ filter: /./, namespace: "bun-style-plugin-importer" }, async (args) => {
-        if (!resolverContents) {
+        if (!importerContents) {
           const formatted = getFilePath("./utils.js");
-          resolverContents = await fs.promises.readFile(formatted, "utf8");;
+          importerContents = await fs.promises.readFile(formatted, "utf8");;
         }
 
         return {
-          contents: resolverContents,
+          contents: importerContents,
           loader: "js",
         }
       });
