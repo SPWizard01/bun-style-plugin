@@ -1,6 +1,6 @@
-import styles from './styles/style.scss';
-import another, { code as anothercode } from './styles/anotherstyle.module.scss';
-import image from './assets/bunlogo.svg';
+import { css } from './styles/style.scss';
+import { classes as anothercode, css as another } from './styles/anotherstyle.module.scss';
+import image from '../assets/bunlogo.svg';
+console.log('Styles loaded:\n' + css, image);
 console.log('Code loaded:\n' + anothercode);
-console.log('Styles loaded:\n' + styles, image);
-console.log('Another Styles loaded:\n',another);
+console.log('Another Styles loaded:\n', another);

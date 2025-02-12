@@ -1,4 +1,4 @@
-# Bun Style Loader
+# Bun Style Plugin
 
 Originally forked from https://github.com/taggon/bun-style-loader
 Bun plugin to allow loading css, sass files, and css modules
@@ -16,7 +16,7 @@ npm install --save-dev sass # Required for compiling Sass (only when needed)
 Next, add the plugin to your build script:
 
 ```js
-import styleLoader from 'bun-style-plugin';
+import { styleLoader } from 'bun-style-plugin';
 
 Bun.build({
   ...
@@ -30,7 +30,7 @@ Bun.build({
 Now, you can import CSS, SASS files, and CSS modules in your code:
 
 ```js
-import styles from './styles.css';
+import { css } from "./styles.css";
 
 console.log(styles); // string of the css file
 ```
@@ -43,8 +43,8 @@ To incorporate the `bun-style-plugin` at runtime, follow these steps. Assume you
 
 ```js
 // preload.ts
-import { plugin } from 'bun';
-import styleLoader from 'bun-style-plugin';
+import { plugin } from "bun";
+import { styleLoader } from "bun-style-plugin";
 
 await plugin(styleLoader(/* options here */));
 ```
@@ -86,7 +86,7 @@ Bun.build({
 Alternatively, you can easily generate the list of target browsers using the `browserslist` package:
 
 ```js
-import styleLoader from 'bun-style-plugin';
+import { styleLoader } from 'bun-style-plugin';
 import browserslist from 'browserslist';
 
 Bun.build({
@@ -104,13 +104,13 @@ This approach streamlines the configuration process, ensuring that your styles a
 
 ## Insert CSS to DOM
 
-The plugin does NOT automatically insert the CSS into the DOM. Instead, it provides the CSS either as a string or as key-value pairs in the case of CSS modules. To incorporate the CSS into the DOM, you need to manually utilize the `insertStyleElement`` function from `bun-style-plugin/utils`.
+The plugin does NOT automatically insert the CSS into the DOM. Instead, it provides the CSS either as a string or as key-value pairs in the case of CSS modules. To incorporate the CSS into the DOM, you need to manually utilize the ` insertStyleElement`` function from  `bun-style-plugin/utils`.
 
 Example for plain CSS:
 
 ```js
-import { insertStyleElement } from 'bun-style-plugin/utils';
-import styles from './styles.css';
+import { insertStyleElement } from "bun-style-plugin/utils";
+import { css } from "./styles.css";
 
 insertStyleElement(styles);
 ```
@@ -126,13 +126,13 @@ Example for CSS modules:
 
 ```js
 // app.js
-import { insertStyleElement } from 'bun-style-plugin/utils';
-import styles, { code } from './styles.module.css';
+import { insertStyleElement } from "bun-style-plugin/utils";
+import { css, classes } from "./styles.module.css";
 
-insertStyleElement(styles, code);
+insertStyleElement(css, classes.blue);
 
 export default function render() {
-  return `<div class="${styles.blue}">Hello World</div>`;
+  return `<div class="${classes.blue}">Hello World</div>`;
 }
 ```
 
@@ -145,19 +145,20 @@ You may need to add a custom type declaration.
 For CSS modules:
 
 ```typescript
-declare module '*.module.css' {
-  const content: Record<string, string>;
-  export default content;
-  export const code: string;
+declare module "*.module.css" {
+  export const classes: Record<string, string>;
+  export const css: string;
 }
+
+
 ```
 
 For plain CSS files:
 
 ```typescript
 declare module '*.css' {
-  const content: string;
-  export default content;
+  export const classes: Record<string, string>;
+  export const css: string;
 }
 ```
 

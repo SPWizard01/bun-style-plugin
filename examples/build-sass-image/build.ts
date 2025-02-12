@@ -10,6 +10,8 @@ await Bun.build({
     processUrlImports: true,
     useSassEmbedded: true,
     cssModules: true,
+    forwardClassImports: true,
+    autoInject: true,
     sassCompilerOptions: {
       loadPaths: ["node_modules"],
       silenceDeprecations: ["import", "global-builtin"]

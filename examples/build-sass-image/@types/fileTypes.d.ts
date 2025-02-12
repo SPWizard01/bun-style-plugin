@@ -1,13 +1,13 @@
 declare module "*.module.scss" {
-  const content: string;
-  export const code: string;
-  export default content;
+  export const classes: Record<string, string>;
+  export const css: string;
 }
 
-declare module "*.scss" {
-  const content: string;
-  export default content;
+declare module '*.scss' {
+  export const classes: Record<string, string>;
+  export const css: string;
 }
+
 
 declare module "*.svg" {
   const content: string;

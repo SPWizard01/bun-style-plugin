@@ -1,10 +1,9 @@
 declare module "*.module.css" {
-  const content: Record<string, string>;
-  export default content;
-  export const code: string;
+  export const classes: Record<string, string>;
+  export const css: string;
 }
 
 declare module '*.css' {
-  const content: string;
-  export default content;
+  export const classes: Record<string, string>;
+  export const css: string;
 }

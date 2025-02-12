@@ -1,5 +1,5 @@
 import type { BunPlugin } from "bun";
-import compileCSS from "./compile-css";
+import { compileCSS } from "./compile-css";
 import type { Options as EmbeddedOptions } from "sass-embedded"
 import type { Options as RegularOptions } from "sass"
 /**
@@ -18,6 +18,8 @@ export type StyleLoaderOptions = {
   processUrlImports?: boolean;
   precompile?(source: string, path: string): string;
   cssModules?: boolean;
+  forwardClassImports?: boolean;
+  autoInject?: boolean;
   /**
    * Use embedded sass compiler or default sass compiler
    * Default: true
@@ -40,7 +42,7 @@ export function styleLoader(options: StyleLoaderOptions = {}): BunPlugin {
   let resolverContents = ``;
 
   return {
-    name: "bun-scss-loader",
+    name: "bun-style-plugin",
     async setup(build) {
       const [sass, fs, os, embedded] = await Promise.all([
         import("sass"),
@@ -57,10 +59,24 @@ export function styleLoader(options: StyleLoaderOptions = {}): BunPlugin {
         return formatted;
       }
 
+      build.onResolve({ filter: /bun-style-plugin-importer/ }, (args) => {
+        return {
+          path: "bun-style-plugin-importer",
+          namespace: "bun-style-plugin-importer",
+        };
+      });
+
       build.onResolve({ filter: /bun-style-plugin-registry/ }, (args) => {
         return {
           path: "bun-style-plugin-registry",
           namespace: "bun-style-plugin-registry",
+        };
+      });
+
+      build.onResolve({ filter: /bun-style-plugin-resolver/ }, (args) => {
+        return {
+          path: "bun-style-plugin-resolver",
+          namespace: "bun-style-plugin-resolver",
         };
       });
 
@@ -75,13 +91,6 @@ export function styleLoader(options: StyleLoaderOptions = {}): BunPlugin {
         }
       });
 
-      build.onResolve({ filter: /bun-style-plugin-resolver/ }, (args) => {
-        return {
-          path: "bun-style-plugin-resolver",
-          namespace: "bun-style-plugin-resolver",
-        };
-      });
-
       build.onLoad({ filter: /./, namespace: "bun-style-plugin-resolver" }, async (args) => {
         if (!resolverContents) {
           const formatted = getFilePath("./styleAssetResolver.js");
@@ -93,29 +102,56 @@ export function styleLoader(options: StyleLoaderOptions = {}): BunPlugin {
           loader: "js",
         }
       });
-      build.onLoad({ filter: /\.css$/ }, (args) => {
-        const contents = fs.readFileSync(args.path, "utf8");
-        const isCssModule = args.path.endsWith(".module.css");
-        const precompiled = opts.precompile?.(contents, args.path) ?? contents;
-        return compileCSS(precompiled, args.path, {
-          cssModules: isCssModule && opts.cssModules,
-          targets: opts.targets,
-          minify: opts.minify,
-          processUrlImports: opts.processUrlImports,
-        });
+
+      build.onLoad({ filter: /./, namespace: "bun-style-plugin-importer" }, async (args) => {
+        if (!resolverContents) {
+          const formatted = getFilePath("./utils.js");
+          resolverContents = await fs.promises.readFile(formatted, "utf8");;
+        }
+
+        return {
+          contents: resolverContents,
+          loader: "js",
+        }
       });
 
-      build.onLoad({ filter: /\.scss$/ }, async (args) => {
-        const result = await compiler.compileAsync(args.path, { ...opts.sassCompilerOptions });
-        const isCssModule = args.path.endsWith(".module.scss");
-        const precompiled = opts.precompile?.(result.css, args.path) ?? result.css;
-        return compileCSS(precompiled, args.path, {
+      build.onLoad({ filter: /\.s?css$/ }, async (args) => {
+        const importName = args.path.toLowerCase();
+        const isSass = importName.endsWith(".scss");
+        const isCssModule = importName.endsWith(".module.css");
+        const isSassModule = importName.endsWith(".module.scss");
+        const isModule = isCssModule || isSassModule;
+        let cssContents = "";
+        if (isSass) {
+          const result = await compiler.compileAsync(args.path, { ...opts.sassCompilerOptions });
+          cssContents = result.css;
+        } else {
+          cssContents = fs.readFileSync(args.path, "utf8");
+        }
+
+        const precompiled = opts.precompile?.(cssContents, args.path) ?? cssContents;
+        const result = await compileCSS(precompiled, args.path, {
+          cssModules: isModule && opts.cssModules,
           targets: opts.targets,
           minify: opts.minify,
-          cssModules: isCssModule && opts.cssModules,
           processUrlImports: opts.processUrlImports,
+          forwardClassImports: opts.forwardClassImports,
+          autoInject: opts.autoInject,
         });
+        return result;
       });
+
+      // build.onLoad({ filter: /\.scss$/ }, async (args) => {
+      //   const result = await compiler.compileAsync(args.path, { ...opts.sassCompilerOptions });
+      //   const isCssModule = args.path.endsWith(".module.scss");
+      //   const precompiled = opts.precompile?.(result.css, args.path) ?? result.css;
+      //   return compileCSS(precompiled, args.path, {
+      //     targets: opts.targets,
+      //     minify: opts.minify,
+      //     cssModules: isCssModule && opts.cssModules,
+      //     processUrlImports: opts.processUrlImports,
+      //   });
+      // });
     },
   };
 }

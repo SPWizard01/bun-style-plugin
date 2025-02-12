@@ -1,7 +1,14 @@
-@import url('./style2.css');
-
+@import url("./style2.css");
+@font-face {
+  font-family: "MyCustomFont";
+  src: url("https://example.com/fonts/MyCustomFont.woff2") format("woff2"),
+    url("https://example.com/fonts/MyCustomFont.woff") format("woff");
+  font-weight: normal;
+  font-style: normal;
+}
 .red {
   color: red;
+  background-image: url("../assets/bunlogo.svg");
 }
 
 .blue {
