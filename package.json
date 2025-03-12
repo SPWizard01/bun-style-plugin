@@ -1,7 +1,7 @@
 {
   "name": "bun-style-plugin",
   "description": "Bun plugin to allow loading css, sass files, and modules",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "type": "module",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -15,7 +15,9 @@
   "readme": "README.md",
   "license": "MIT",
   "files": [
-    "dist"
+    "dist",
+    "README.md",
+    "LICENSE"
   ],
   "keywords": [
     "bun",
@@ -34,12 +36,12 @@
     "prepublish": "bun run build.ts"
   },
   "peerDependencies": {
-    "typescript": "^5.7.3",
-    "lightningcss-wasm": "^1.29.1",
-    "sass": "^1.84.0",
-    "sass-embedded": "^1.83.4"
+    "typescript": "^5.8.2",
+    "lightningcss-wasm": "^1.29.2",
+    "sass": "^1.85.1",
+    "sass-embedded": "^1.85.1"
   },
   "dependencies": {
-    "@types/bun": "^1.2.2"
+    "@types/bun": "^1.2.5"
   }
 }
