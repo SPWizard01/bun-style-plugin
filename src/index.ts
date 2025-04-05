@@ -1,7 +1,10 @@
-import type { BunPlugin } from "bun";
+import { type BunPlugin, file } from "bun";
 import { compileCSS } from "./compile-css";
 import type { Options as EmbeddedOptions } from "sass-embedded"
 import type { Options as RegularOptions } from "sass"
+import { platform } from "os";
+import sass from "sass";
+import embedded from "sass-embedded";
 /**
  * No options for now
  */
@@ -44,18 +47,15 @@ export function styleLoader(options: StyleLoaderOptions = {}): BunPlugin {
   return {
     name: "bun-style-plugin",
     async setup(build) {
-      const [sass, fs, os, embedded] = await Promise.all([
+      const [sass, embedded] = await Promise.all([
         import("sass"),
-        import("fs"),
-        import("os"),
         import("sass-embedded")
       ]);
-      const platform = os.platform();
+      const osPlatform = platform();
       const compiler = opts.useSassEmbedded ? embedded : sass;
-
       function getFilePath(path: string) {
         const toRead = import.meta.resolve(path);
-        const formatted = toRead.replace(platform === "win32" ? "file:///" : "file://", "");
+        const formatted = toRead.replace(osPlatform === "win32" ? "file:///" : "file://", "");
         return formatted;
       }
 
@@ -83,7 +83,7 @@ export function styleLoader(options: StyleLoaderOptions = {}): BunPlugin {
       build.onLoad({ filter: /./, namespace: "bun-style-plugin-registry" }, async (args) => {
         if (!registryContents) {
           const formatted = getFilePath("./importRegistry.js");
-          registryContents = await fs.promises.readFile(formatted, "utf8");;
+          registryContents = await file(formatted).text();
         }
         return {
           contents: registryContents,
@@ -94,7 +94,7 @@ export function styleLoader(options: StyleLoaderOptions = {}): BunPlugin {
       build.onLoad({ filter: /./, namespace: "bun-style-plugin-resolver" }, async (args) => {
         if (!resolverContents) {
           const formatted = getFilePath("./styleAssetResolver.js");
-          resolverContents = await fs.promises.readFile(formatted, "utf8");;
+          resolverContents = await file(formatted).text();
         }
 
         return {
@@ -106,7 +106,7 @@ export function styleLoader(options: StyleLoaderOptions = {}): BunPlugin {
       build.onLoad({ filter: /./, namespace: "bun-style-plugin-importer" }, async (args) => {
         if (!importerContents) {
           const formatted = getFilePath("./utils.js");
-          importerContents = await fs.promises.readFile(formatted, "utf8");;
+          importerContents = await file(formatted).text();
         }
 
         return {
@@ -126,7 +126,7 @@ export function styleLoader(options: StyleLoaderOptions = {}): BunPlugin {
           const result = await compiler.compileAsync(args.path, { ...opts.sassCompilerOptions });
           cssContents = result.css;
         } else {
-          cssContents = fs.readFileSync(args.path, "utf8");
+          cssContents = await file(args.path).text();
         }
 
         const precompiled = opts.precompile?.(cssContents, args.path) ?? cssContents;

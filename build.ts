@@ -9,7 +9,7 @@ await build({
     minify: false,
     splitting: false,
     format: "esm",
-    external: ["sass", "sass-embedded", "lightningcss-wasm", "bun-style-plugin-registry"]
+    external: ["sass", "sass-embedded", "lightningcss", "lightningcss-wasm", "bun-style-plugin-registry"]
 });
 
 await $`tsc`

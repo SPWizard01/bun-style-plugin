@@ -1,5 +1,5 @@
 import type { OnLoadResult } from "bun";
-import { transform, browserslistToTargets } from "lightningcss-wasm"
+import { transform, browserslistToTargets } from "lightningcss"
 export type CompileOptions = {
   minify?: boolean;
   cssModules?: boolean;
@@ -78,12 +78,12 @@ export async function compileCSS(content: string, path: string, options: Compile
   let thisCss = `
 const thisCss = ${withResolver};
 `
-let autoInject = ``;
-let autoInjectImport = ``;
-if(options.autoInject) {
-  autoInjectImport = `import { insertStyleElement } from "bun-style-plugin-importer";`
-  autoInject = `insertStyleElement(thisCss);`
-}
+  let autoInject = ``;
+  let autoInjectImport = ``;
+  if (options.autoInject) {
+    autoInjectImport = `import { insertStyleElement } from "bun-style-plugin-importer";`
+    autoInject = `insertStyleElement(thisCss);`
+  }
 
   if (exported) {
     thisCss += `
