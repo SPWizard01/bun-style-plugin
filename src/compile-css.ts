@@ -1,5 +1,5 @@
 import type { OnLoadResult } from "bun";
-import { transform, browserslistToTargets } from "lightningcss"
+import { transform, browserslistToTargets, type ImportRule } from "lightningcss"
 export type CompileOptions = {
   minify?: boolean;
   cssModules?: boolean;
@@ -12,6 +12,7 @@ export type CompileOptions = {
 export async function compileCSS(content: string, path: string, options: CompileOptions = {}): Promise<OnLoadResult> {
   const imports: string[] = [];
   const urlImports: string[] = [];
+  const externalImports: string[] = [];
   const targets = options.targets?.length ? browserslistToTargets(options.targets) : undefined;
   const { code, exports, dependencies } = transform({
     filename: path,
@@ -20,9 +21,16 @@ export async function compileCSS(content: string, path: string, options: Compile
     minify: options.minify,
     targets,
     analyzeDependencies: true,
+
     visitor: {
       Rule: {
         import(rule) {
+          const lowerUrl = rule.value.url.toLowerCase();
+          const isDataOrHttp = lowerUrl.startsWith("data:") || lowerUrl.startsWith("http");
+          if (isDataOrHttp || !options.processUrlImports) {
+            externalImports.push(rule.value.url);
+            return []
+          }
           imports.push(rule.value.url);
           return [];
         },
@@ -61,43 +69,45 @@ export async function compileCSS(content: string, path: string, options: Compile
     const replaceRegexp = new RegExp(`\\(\\"${element.placeholder}\\"\\)`, "g");
     codeString = codeString.replace(replaceRegexp, `("${element.url}")`);
   }
+
+  for (const external of externalImports.reverse()) {
+    codeString = `@import "${external}"; ${codeString}`;
+  }
   const needsResolving = returnedDependencies.length > 0; //codeString.includes("[BUN_RESOLVE]");
   const styleResolver = needsResolving ? `import bun_style_plugin_resolver from "bun-style-plugin-resolver";` : "";
   const withResolver = needsResolving ? `bun_style_plugin_resolver(\`${codeString}\`, ${placehoders})` : `\`${codeString}\``;
   const nameMap = Object.fromEntries(Object.entries(exports || {}).map(([key, item]) => [key, item.name]));
 
-  const imported = imports.map((url, i) => `import { css as _css${i}, classes as _classes${i} } from "${url}";`).join("\n");
+  const imported = imports.map((url, i) => `import { css as _css${i}, classes as _classes${i}, injectedStyles as _injectedStyles${i} } from "${url}";`).join("\n");
   const exported = imports.map((_, i) => `_css${i}`).join(" + ");
   let importedClasses = imports.map((_, i) => `_classes${i}`).join(", ...");
   if (!importedClasses) importedClasses = "{}";
+  let injectedStyleElements = imports.map((_, i) => `_injectedStyles${i}`).join(", ...");
+  if (!injectedStyleElements) injectedStyleElements = "";
+
   let classExport = JSON.stringify(options.cssModules ? nameMap : {});
   if (importedClasses !== "{}" && options.forwardClassImports) {
     const restExport = classExport.substring(1, classExport.length - 1);
     classExport = `{...${importedClasses}${(restExport ? `, ${restExport}` : ``)}}`;
   }
-  let thisCss = `
+  const resultingCss = `
 const thisCss = ${withResolver};
+const resultingCss = ${exported ? `${exported} + ` : ``}thisCss;
 `
+
   let autoInject = ``;
   let autoInjectImport = ``;
   if (options.autoInject) {
     autoInjectImport = `import { insertStyleElement } from "bun-style-plugin-importer";`
-    autoInject = `insertStyleElement(thisCss);`
+    autoInject = `const injectedElement = await insertStyleElement(thisCss);`
   }
 
-  if (exported) {
-    thisCss += `
-export const css = ${exported} + thisCss;
-`
-  } else {
-    thisCss += `
-export const css = thisCss;
-    `
-  }
+
 
   const exportContent = `
-${thisCss};
+export const css = resultingCss;
 export const classes = ${classExport};
+export const injectedStyles = ${injectedStyleElements ? `[...${injectedStyleElements}, injectedElement]` : `[injectedElement]`};
   `
 
   let contents = `
@@ -105,8 +115,9 @@ ${styleResolver}
 ${importedUrls}
 ${autoInjectImport}
 ${imported}
-${exportContent}
+${resultingCss}
 ${autoInject}
+${exportContent}
   `
   return {
     contents,

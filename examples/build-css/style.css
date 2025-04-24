@@ -1,8 +1,15 @@
+@import "https://fonts.googleapis.com/css?family=Reenie+Beanie";
+@import "https://fonts.googleapis.com/css?family=Reenie+Beanie2";
+@import "https://fonts.googleapis.com/css?family=Reenie+Beanie3";
+@import "https://fonts.googleapis.com/css?family=Reenie+Beanie4";
+@import "https://fonts.googleapis.com/css?family=Reenie+Beanie5";
+@import "https://fonts.googleapis.com/css?family=Reenie+Beanie6";
+
 @import url("./style2.css");
 @font-face {
   font-family: "MyCustomFont";
-  src: url("https://example.com/fonts/MyCustomFont.woff2") format("woff2"),
-    url("https://example.com/fonts/MyCustomFont.woff") format("woff");
+  src: url("https://example.com/fonts/aMyCustomFont.woff2") format("woff2"),
+    url("https://example.com/fonts/bMyCustomFont.woff") format("woff");
   font-weight: normal;
   font-style: normal;
 }
