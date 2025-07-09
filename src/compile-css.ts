@@ -1,5 +1,5 @@
 import type { OnLoadResult } from "bun";
-import { transform, browserslistToTargets, type ImportRule } from "lightningcss"
+import { transform, browserslistToTargets } from "lightningcss"
 export type CompileOptions = {
   minify?: boolean;
   cssModules?: boolean;
@@ -7,6 +7,7 @@ export type CompileOptions = {
   processUrlImports?: boolean;
   forwardClassImports?: boolean;
   autoInject?: boolean;
+  outputCss?: boolean;
 };
 
 export async function compileCSS(content: string, path: string, options: CompileOptions = {}): Promise<OnLoadResult> {
@@ -20,8 +21,7 @@ export async function compileCSS(content: string, path: string, options: Compile
     cssModules: Boolean(options.cssModules),
     minify: options.minify,
     targets,
-    analyzeDependencies: true,
-
+    analyzeDependencies: true && !options.outputCss,
     visitor: {
       Rule: {
         import(rule) {
@@ -46,8 +46,8 @@ export async function compileCSS(content: string, path: string, options: Compile
   });
 
   let importedUrls = ``
-  let placehoders = `[`;
   const returnedDependencies = dependencies || [];
+  let placehoders = `[`;
   if (urlImports.length > 0) {
     importedUrls += `import { registerStyleImport } from "bun-style-plugin-registry";\n`;
     const importedDeps: string[] = [];
@@ -73,12 +73,30 @@ export async function compileCSS(content: string, path: string, options: Compile
   for (const external of externalImports.reverse()) {
     codeString = `@import "${external}"; ${codeString}`;
   }
+
+  if (options.outputCss) {
+    for (const internal of imports.reverse()) {
+      codeString = `@import "${internal}"; ${codeString}`;
+    }
+    //offload to bun
+    console.log("Outputting CSS file");
+    console.log(codeString);
+    return {
+      contents: codeString,
+      loader: "css"
+    }
+  }
+
   const needsResolving = returnedDependencies.length > 0; //codeString.includes("[BUN_RESOLVE]");
   const styleResolver = needsResolving ? `import bun_style_plugin_resolver from "bun-style-plugin-resolver";` : "";
-  const withResolver = needsResolving ? `bun_style_plugin_resolver(\`${codeString}\`, ${placehoders})` : `\`${codeString}\``;
+  const cssThroughResolver = needsResolving ? `bun_style_plugin_resolver(\`${codeString}\`, ${placehoders})` : `\`${codeString}\``;
   const nameMap = Object.fromEntries(Object.entries(exports || {}).map(([key, item]) => [key, item.name]));
 
-  const imported = imports.map((url, i) => `import { css as _css${i}, classes as _classes${i}, injectedStyles as _injectedStyles${i} } from "${url}";`).join("\n");
+  const imported = imports.map(
+    (url, i) => {
+      return `import { css as _css${i}, classes as _classes${i}, injectedStyles as _injectedStyles${i} } from "${url}";`
+    }
+  ).join("\n");
   const exported = imports.map((_, i) => `_css${i}`).join(" + ");
   let importedClasses = imports.map((_, i) => `_classes${i}`).join(", ...");
   if (!importedClasses) importedClasses = "{}";
@@ -91,7 +109,7 @@ export async function compileCSS(content: string, path: string, options: Compile
     classExport = `{...${importedClasses}${(restExport ? `, ${restExport}` : ``)}}`;
   }
   const resultingCss = `
-const thisCss = ${withResolver};
+const thisCss = ${cssThroughResolver};
 const resultingCss = ${exported ? `${exported} + ` : ``}thisCss;
 `
 

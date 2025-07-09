@@ -1,0 +1,15 @@
+{
+  "name": "build-sass-image",
+  "module": "index.ts",
+  "type": "module",
+  "scripts": {
+    "build": "bun run ./build.ts"
+  },
+  "dependencies": {
+    "bun-style-plugin": "link:bun-style-plugin"
+  },
+  "devDependencies": {
+    "@fluentui/react": "^8.122.9",
+    "@types/bun": "^1.2.2"
+  }
+}

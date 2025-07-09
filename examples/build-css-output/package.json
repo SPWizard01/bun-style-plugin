@@ -1,0 +1,15 @@
+{
+  "name": "build-css",
+  "module": "index.js",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "bun run ./build.js"
+  },
+  "dependencies": {
+    "bun-style-plugin": "link:bun-style-plugin"
+  },
+  "devDependencies": {
+    "bun-types": "latest"
+  }
+}
