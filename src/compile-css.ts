@@ -79,8 +79,6 @@ export async function compileCSS(content: string, path: string, options: Compile
       codeString = `@import "${internal}"; ${codeString}`;
     }
     //offload to bun
-    console.log("Outputting CSS file");
-    console.log(codeString);
     return {
       contents: codeString,
       loader: "css"
