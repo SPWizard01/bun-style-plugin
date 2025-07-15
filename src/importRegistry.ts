@@ -2,6 +2,7 @@
 const importRegistry = new Map<string, string>();
 export function registerStyleImport(key: string, bunurl: string) {
     importRegistry.set(key, bunurl);
+    return key;
 };
 export function getStyleImportRegistry() {
     return Array.from(importRegistry, ([key, value]) => ({ key, value }));

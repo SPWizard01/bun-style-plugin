@@ -25,17 +25,15 @@ export function insertStyleElement(code: string, selector?: string) {
     }
   }
   style.innerHTML = code;
+  let target: Element = window.document.head;
   if (selector) {
-    const result = window.document.querySelector(selector)
     style.setAttribute("data-bun-selector", selector);
+    const result = window.document.querySelector(selector)
     if (result) {
-      result.appendChild(style);
-    } else {
-      window.document.head.appendChild(style);
+      target = result;
     }
-  } else {
-    window.document.head.appendChild(style);
   }
+  target.appendChild(style);
   importedStyleMap.set(codeHash, style);
   return style;
 }

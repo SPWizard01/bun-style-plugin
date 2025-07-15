@@ -8,8 +8,15 @@ export type CompileOptions = {
   forwardClassImports?: boolean;
   autoInject?: boolean;
   outputCss?: boolean;
-  defaultExport?: "css" | "classes" | "injectedStyles" | "all";
+  defaultExport?: StyleLoaderDefaultExport;
 };
+
+export interface StyleLoaderDefaultExport {
+  css?: boolean
+  classes?: boolean
+  injectedStyles?: boolean
+}
+
 
 export async function compileCSS(content: string, path: string, options: CompileOptions = {}): Promise<OnLoadResult> {
   const imports: string[] = [];
@@ -46,9 +53,8 @@ export async function compileCSS(content: string, path: string, options: Compile
     }
   });
 
-  let importedUrls = ``
+  let importedUrls = `const resolverPlaceholders = [];\n`
   const returnedDependencies = dependencies || [];
-  let placehoders = `[`;
   if (urlImports.length > 0) {
     importedUrls += `import { registerStyleImport } from "bun-style-plugin-registry";\n`;
     const importedDeps: string[] = [];
@@ -59,11 +65,9 @@ export async function compileCSS(content: string, path: string, options: Compile
       if (importedDeps.includes(importFriendlyPlaceholder)) continue;
       importedDeps.push(importFriendlyPlaceholder);
       importedUrls += `import sdi_${importFriendlyPlaceholder} from "${dep.url}";\n`
-      importedUrls += `registerStyleImport("${dep.placeholder}",sdi_${importFriendlyPlaceholder});`
-      placehoders += `"${dep.placeholder}",`
+      importedUrls += `resolverPlaceholders.push(registerStyleImport("${dep.placeholder}",sdi_${importFriendlyPlaceholder}));`
     }
   }
-  placehoders += `]`;
   let codeString = code.toString();
   for (const element of returnedDependencies) {
     if (urlImports.includes(element.url)) continue;
@@ -88,7 +92,7 @@ export async function compileCSS(content: string, path: string, options: Compile
 
   const needsResolving = returnedDependencies.length > 0; //codeString.includes("[BUN_RESOLVE]");
   const styleResolver = needsResolving ? `import bun_style_plugin_resolver from "bun-style-plugin-resolver";` : "";
-  const cssThroughResolver = needsResolving ? `bun_style_plugin_resolver(\`${codeString}\`, ${placehoders})` : `\`${codeString}\``;
+  const cssThroughResolver = needsResolving ? `bun_style_plugin_resolver(\`${codeString}\`, resolverPlaceholders)` : `\`${codeString}\``;
   const nameMap = Object.fromEntries(Object.entries(exports || {}).map(([key, item]) => [key, item.name]));
 
   const imported = imports.map(
@@ -125,24 +129,21 @@ export const classes = ${classExport};
 export const injectedStyles = ${injectedStyleElements ? `[...${injectedStyleElements}, ${injectedElement}]` : `[${injectedElement}]`};
   `
   let defaultExport = ``;
-  if (options.defaultExport) {
-    switch (options.defaultExport) {
-      case "css":
-        defaultExport = `export default css;`;
-        break;
-      case "classes":
-        defaultExport = `export default classes;`;
-        break;
-      case "injectedStyles":
-        defaultExport = `export default injectedStyles;`;
-        break;
-      case "all":
-        defaultExport = `export default {css, classes, injectedStyles};`;
-        break;
-      default:
-        throw new Error(`Unknown default export type: ${options.defaultExport}`);
-    }
+  switch (true) {
+    case (options.defaultExport?.css && options.defaultExport?.classes && options.defaultExport?.injectedStyles):
+      defaultExport = `export default {css, classes, injectedStyles};`;
+      break;
+    case (options.defaultExport?.css):
+      defaultExport = `export default css;`;
+      break;
+    case (options.defaultExport?.classes):
+      defaultExport = `export default classes;`;
+      break;
+    case (options.defaultExport?.injectedStyles):
+      defaultExport = `export default injectedStyles;`;
+      break;
   }
+
   let contents = `
 ${styleResolver}
 ${importedUrls}

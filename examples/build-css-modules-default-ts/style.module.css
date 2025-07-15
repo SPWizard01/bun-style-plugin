@@ -1,6 +1,7 @@
 @import url("./style2.module.css");
 .red {
   color: red;
+  background-image: url("../assets/Sass_Logo_Color.svg");
 }
 
 .blue {
