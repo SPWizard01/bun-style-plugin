@@ -8,7 +8,7 @@ export type CompileOptions = {
   forwardClassImports?: boolean;
   autoInject?: boolean;
   outputCss?: boolean;
-  addDefaultExport?: boolean;
+  defaultExport?: "css" | "classes" | "injectedStyles" | "all";
 };
 
 export async function compileCSS(content: string, path: string, options: CompileOptions = {}): Promise<OnLoadResult> {
@@ -116,22 +116,31 @@ const resultingCss = ${exported ? `${exported} + ` : ``}thisCss;
   let autoInjectImport = ``;
   if (options.autoInject) {
     autoInjectImport = `import { insertStyleElement } from "bun-style-plugin-importer";`
-    autoInject = `const injectedElement = await insertStyleElement(thisCss);`
+    autoInject = `const injectedElement = insertStyleElement(thisCss);`
   }
-
-
-
+  const injectedElement = autoInject ? `injectedElement` : ``;
   const exportContent = `
 export const css = resultingCss;
 export const classes = ${classExport};
-export const injectedStyles = ${injectedStyleElements ? `[...${injectedStyleElements}, injectedElement]` : `[injectedElement]`};
+export const injectedStyles = ${injectedStyleElements ? `[...${injectedStyleElements}, ${injectedElement}]` : `[${injectedElement}]`};
   `
   let defaultExport = ``;
-  if (options.addDefaultExport) {
-    if (options.cssModules) {
-      defaultExport = `export default classes;`
-    } else {
-      defaultExport = `export default {css, classes, injectedStyles};`
+  if (options.defaultExport) {
+    switch (options.defaultExport) {
+      case "css":
+        defaultExport = `export default css;`;
+        break;
+      case "classes":
+        defaultExport = `export default classes;`;
+        break;
+      case "injectedStyles":
+        defaultExport = `export default injectedStyles;`;
+        break;
+      case "all":
+        defaultExport = `export default {css, classes, injectedStyles};`;
+        break;
+      default:
+        throw new Error(`Unknown default export type: ${options.defaultExport}`);
     }
   }
   let contents = `
