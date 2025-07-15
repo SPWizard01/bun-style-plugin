@@ -8,6 +8,7 @@ export type CompileOptions = {
   forwardClassImports?: boolean;
   autoInject?: boolean;
   outputCss?: boolean;
+  addDefaultExport?: boolean;
 };
 
 export async function compileCSS(content: string, path: string, options: CompileOptions = {}): Promise<OnLoadResult> {
@@ -125,7 +126,14 @@ export const css = resultingCss;
 export const classes = ${classExport};
 export const injectedStyles = ${injectedStyleElements ? `[...${injectedStyleElements}, injectedElement]` : `[injectedElement]`};
   `
-
+  let defaultExport = ``;
+  if (options.addDefaultExport) {
+    if (options.cssModules) {
+      defaultExport = `export default classes;`
+    } else {
+      defaultExport = `export default {css, classes, injectedStyles};`
+    }
+  }
   let contents = `
 ${styleResolver}
 ${importedUrls}
@@ -134,6 +142,7 @@ ${imported}
 ${resultingCss}
 ${autoInject}
 ${exportContent}
+${defaultExport}
   `
   return {
     contents,

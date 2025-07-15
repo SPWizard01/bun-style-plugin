@@ -24,6 +24,7 @@ export type StyleLoaderOptions = {
   forwardClassImports?: boolean;
   autoInject?: boolean;
   outputCss?: boolean;
+  addDefaultExport?: boolean;
   /**
    * Use embedded sass compiler or default sass compiler
    * Default: true
@@ -139,6 +140,7 @@ export function styleLoader(options: StyleLoaderOptions = {}): BunPlugin {
           forwardClassImports: opts.forwardClassImports,
           autoInject: opts.autoInject,
           outputCss: opts.outputCss,
+          addDefaultExport: opts.addDefaultExport,
         });
         return result;
       });
@@ -157,4 +159,3 @@ export function styleLoader(options: StyleLoaderOptions = {}): BunPlugin {
     },
   };
 }
-
