@@ -1,5 +1,10 @@
 import type { OnLoadResult } from "bun";
-import { transform, browserslistToTargets } from "lightningcss"
+import {
+  transform,
+  browserslistToTargets,
+  type ImportDependency,
+  type UrlDependency,
+} from "lightningcss";
 export type CompileOptions = {
   minify?: boolean;
   cssModules?: boolean;
@@ -12,17 +17,22 @@ export type CompileOptions = {
 };
 
 export interface StyleLoaderDefaultExport {
-  css?: boolean
-  classes?: boolean
-  injectedStyles?: boolean
+  css?: boolean;
+  classes?: boolean;
+  injectedStyles?: boolean;
 }
 
-
-export async function compileCSS(content: string, path: string, options: CompileOptions = {}): Promise<OnLoadResult> {
+export async function compileCSS(
+  content: string,
+  path: string,
+  options: CompileOptions = {},
+): Promise<OnLoadResult> {
   const imports: string[] = [];
   const urlImports: string[] = [];
   const externalImports: string[] = [];
-  const targets = options.targets?.length ? browserslistToTargets(options.targets) : undefined;
+  const targets = options.targets?.length
+    ? browserslistToTargets(options.targets)
+    : undefined;
   const { code, exports, dependencies } = transform({
     filename: path,
     code: Uint8Array.from(Buffer.from(content)),
@@ -34,10 +44,11 @@ export async function compileCSS(content: string, path: string, options: Compile
       Rule: {
         import(rule) {
           const lowerUrl = rule.value.url.toLowerCase();
-          const isDataOrHttp = lowerUrl.startsWith("data:") || lowerUrl.startsWith("http");
+          const isDataOrHttp =
+            lowerUrl.startsWith("data:") || lowerUrl.startsWith("http");
           if (isDataOrHttp || !options.processUrlImports) {
             externalImports.push(rule.value.url);
-            return []
+            return [];
           }
           imports.push(rule.value.url);
           return [];
@@ -45,27 +56,42 @@ export async function compileCSS(content: string, path: string, options: Compile
       },
       Url(urlObject) {
         const lowerUrl = urlObject.url.toLowerCase();
-        const isDataOrHttp = lowerUrl.startsWith("data:") || lowerUrl.startsWith("http");
+        const isDataOrHttp =
+          lowerUrl.startsWith("data:") || lowerUrl.startsWith("http");
         if (isDataOrHttp || !options.processUrlImports) return urlObject;
         urlImports.push(urlObject.url);
         return urlObject;
       },
-    }
+    },
   });
 
-  let importedUrls = `const resolverPlaceholders = [];\n`
-  const returnedDependencies = dependencies || [];
+  let importedUrls = `const resolverPlaceholders = [];\n`;
+  const returnedDependencies = (dependencies || []).filter(
+    (d) => d.type !== "glob" && d.type !== "file",
+  );
+  const globOrFileDependencies = (dependencies || []).filter(
+    (d) => d.type === "glob" || d.type === "file",
+  );
+  if (globOrFileDependencies.length > 0) {
+    console.warn(
+      "Warning: Detected file or glob dependencies in CSS. These are not currently supported by bun-style-plugin and will be ignored. Affected dependencies:",
+      globOrFileDependencies,
+    );
+  }
   if (urlImports.length > 0) {
     importedUrls += `import { registerStyleImport } from "bun-style-plugin-registry";\n`;
     const importedDeps: string[] = [];
     for (const element of urlImports) {
-      const dep = returnedDependencies.find(dp => dp.url === element);
+      const dep = returnedDependencies.find((dp) => dp.url === element);
       if (!dep) continue;
-      const importFriendlyPlaceholder = dep.placeholder.replace(/(?![a-zA-Z0-9])./g, "_");
+      const importFriendlyPlaceholder = dep.placeholder.replace(
+        /(?![a-zA-Z0-9])./g,
+        "_",
+      );
       if (importedDeps.includes(importFriendlyPlaceholder)) continue;
       importedDeps.push(importFriendlyPlaceholder);
-      importedUrls += `import sdi_${importFriendlyPlaceholder} from "${dep.url}";\n`
-      importedUrls += `resolverPlaceholders.push(registerStyleImport("${dep.placeholder}",sdi_${importFriendlyPlaceholder}));`
+      importedUrls += `import sdi_${importFriendlyPlaceholder} from "${dep.url}";\n`;
+      importedUrls += `resolverPlaceholders.push(registerStyleImport("${dep.placeholder}",sdi_${importFriendlyPlaceholder}));`;
     }
   }
   let codeString = code.toString();
@@ -86,60 +112,70 @@ export async function compileCSS(content: string, path: string, options: Compile
     //offload to bun
     return {
       contents: codeString,
-      loader: "css"
-    }
+      loader: "css",
+    };
   }
 
   const needsResolving = returnedDependencies.length > 0; //codeString.includes("[BUN_RESOLVE]");
-  const styleResolver = needsResolving ? `import bun_style_plugin_resolver from "bun-style-plugin-resolver";` : "";
-  const cssThroughResolver = needsResolving ? `bun_style_plugin_resolver(\`${codeString}\`, resolverPlaceholders)` : `\`${codeString}\``;
-  const nameMap = Object.fromEntries(Object.entries(exports || {}).map(([key, item]) => [key, item.name]));
+  const styleResolver = needsResolving
+    ? `import bun_style_plugin_resolver from "bun-style-plugin-resolver";`
+    : "";
+  const cssThroughResolver = needsResolving
+    ? `bun_style_plugin_resolver(\`${codeString}\`, resolverPlaceholders)`
+    : `\`${codeString}\``;
+  const nameMap = Object.fromEntries(
+    Object.entries(exports || {}).map(([key, item]) => [key, item.name]),
+  );
 
-  const imported = imports.map(
-    (url, i) => {
-      return `import { css as _css${i}, classes as _classes${i}, injectedStyles as _injectedStyles${i} } from "${url}";`
-    }
-  ).join("\n");
+  const imported = imports
+    .map((url, i) => {
+      return `import { css as _css${i}, classes as _classes${i}, injectedStyles as _injectedStyles${i} } from "${url}";`;
+    })
+    .join("\n");
   const exported = imports.map((_, i) => `_css${i}`).join(" + ");
   let importedClasses = imports.map((_, i) => `_classes${i}`).join(", ...");
   if (!importedClasses) importedClasses = "{}";
-  let injectedStyleElements = imports.map((_, i) => `_injectedStyles${i}`).join(", ...");
+  let injectedStyleElements = imports
+    .map((_, i) => `_injectedStyles${i}`)
+    .join(", ...");
   if (!injectedStyleElements) injectedStyleElements = "";
 
   let classExport = JSON.stringify(options.cssModules ? nameMap : {});
   if (importedClasses !== "{}" && options.forwardClassImports) {
     const restExport = classExport.substring(1, classExport.length - 1);
-    classExport = `{...${importedClasses}${(restExport ? `, ${restExport}` : ``)}}`;
+    classExport = `{...${importedClasses}${restExport ? `, ${restExport}` : ``}}`;
   }
   const resultingCss = `
 const thisCss = ${cssThroughResolver};
 const resultingCss = ${exported ? `${exported} + ` : ``}thisCss;
-`
+`;
 
   let autoInject = ``;
   let autoInjectImport = ``;
   if (options.autoInject) {
-    autoInjectImport = `import { insertStyleElement } from "bun-style-plugin-importer";`
-    autoInject = `const injectedElement = insertStyleElement(thisCss);`
+    autoInjectImport = `import { insertStyleElement } from "bun-style-plugin-importer";`;
+    autoInject = `const injectedElement = insertStyleElement(thisCss);`;
   }
   const injectedElement = autoInject ? `injectedElement` : ``;
   const exportContent = `
 export const css = resultingCss;
 export const classes = ${classExport};
 export const injectedStyles = ${injectedStyleElements ? `[...${injectedStyleElements}, ${injectedElement}]` : `[${injectedElement}]`};
-  `
+  `;
   let defaultExport = ``;
   switch (true) {
-    case (options.defaultExport?.css && options.defaultExport?.classes && options.defaultExport?.injectedStyles):
+    case options.defaultExport?.css &&
+      options.defaultExport?.classes &&
+      options.defaultExport?.injectedStyles:
       defaultExport = `export default {css, classes, injectedStyles};`;
       break;
-    case (options.defaultExport?.css):
+    case options.defaultExport?.css:
       defaultExport = `export default css;`;
       break;
-    case (options.defaultExport?.classes):
+    case options.defaultExport?.classes:
       defaultExport = `export default classes;`;
       break;
-    case (options.defaultExport?.injectedStyles):
+    case options.defaultExport?.injectedStyles:
       defaultExport = `export default injectedStyles;`;
       break;
   }
@@ -153,9 +189,9 @@ ${resultingCss}
 ${autoInject}
 ${exportContent}
 ${defaultExport}
-  `
+  `;
   return {
     contents,
-    loader: "js"
+    loader: "js",
   };
 }

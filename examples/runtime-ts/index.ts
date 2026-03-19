@@ -1,3 +1,2 @@
-import styles from './style.css';
-
-console.log('Styles loaded:', { styles });
+const a = await import('./style.css');
+console.log('Styles loaded:', a);
