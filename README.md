@@ -138,6 +138,22 @@ export default function render() {
 
 These examples demonstrate how to use the `insertStyleElement` function to manually insert CSS into the DOM for both plain CSS files and CSS modules.
 
+## Inject and Eject Styles
+
+When using `autoInject: true`, `injectedStyles` contains the style elements created when the stylesheet module is first loaded. Use `injectStyles` when a component mounts and `ejectStyles` during cleanup so the styles are restored when the component mounts again:
+
+```js
+import { ejectStyles, injectStyles } from "bun-style-plugin/utils";
+import { injectedStyles } from "./styles.scss";
+
+export function launch() {
+  injectStyles(injectedStyles);
+  return () => ejectStyles(injectedStyles);
+}
+```
+
+`injectStyles` is safe to call while the elements are already in the document. With `autoInject: false`, `injectedStyles` does not contain created style elements; use `insertStyleElement` to create them instead.
+
 ## TypeScript
 
 You may need to add a custom type declaration.
