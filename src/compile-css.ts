@@ -1,9 +1,7 @@
 import type { OnLoadResult } from "bun";
 import {
-  transform,
   browserslistToTargets,
-  type ImportDependency,
-  type UrlDependency,
+  transform
 } from "lightningcss";
 export type CompileOptions = {
   minify?: boolean;
@@ -161,6 +159,19 @@ const resultingCss = ${exported ? `${exported} + ` : ``}thisCss;
 export const css = resultingCss;
 export const classes = ${classExport};
 export const injectedStyles = ${injectedStyleElements ? `[...${injectedStyleElements}, ${injectedElement}]` : `[${injectedElement}]`};
+export function injectInjectedStyles() {
+  for (const style of injectedStyles) {
+    if (!style || style.isConnected) continue;
+    const selector = style.getAttribute("data-bun-selector");
+    const target = selector ? window.document.querySelector(selector) : null;
+    (target ?? window.document.head).appendChild(style);
+  }
+}
+export function removeInjectedStyles() {
+  for (const style of injectedStyles) {
+    style?.remove();
+  }
+}
   `;
   let defaultExport = ``;
   switch (true) {

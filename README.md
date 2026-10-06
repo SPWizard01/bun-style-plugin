@@ -104,7 +104,7 @@ This approach streamlines the configuration process, ensuring that your styles a
 
 ## Insert CSS to DOM
 
-The plugin does NOT automatically insert the CSS into the DOM. Instead, it provides the CSS either as a string or as key-value pairs in the case of CSS modules. To incorporate the CSS into the DOM, you need to manually utilize the ` insertStyleElement`` function from  `bun-style-plugin/utils`.
+The plugin does NOT automatically insert the CSS into the DOM. Instead, it provides the CSS either as a string or as key-value pairs in the case of CSS modules. To incorporate the CSS into the DOM, you need to manually utilize the `insertStyleElement`` function from `bun-style-plugin/utils`.
 
 Example for plain CSS:
 
@@ -138,6 +138,21 @@ export default function render() {
 
 These examples demonstrate how to use the `insertStyleElement` function to manually insert CSS into the DOM for both plain CSS files and CSS modules.
 
+## Inject and Remove Styles
+
+When using `autoInject: true`, stylesheet modules export `injectInjectedStyles` and `removeInjectedStyles` methods bound to their own `injectedStyles` array. Call the inject method when mounting and return the remove method for cleanup:
+
+```js
+import { injectInjectedStyles, removeInjectedStyles } from "./styles.scss";
+
+export function launch() {
+  injectInjectedStyles();
+  return removeInjectedStyles;
+}
+```
+
+`injectInjectedStyles` is safe to call while the styles are already in the document. With `autoInject: false`, no style elements are created automatically, so use `insertStyleElement` to create and manage them.
+
 ## TypeScript
 
 You may need to add a custom type declaration.
@@ -149,14 +164,12 @@ declare module "*.module.css" {
   export const classes: Record<string, string>;
   export const css: string;
 }
-
-
 ```
 
 For plain CSS files:
 
 ```typescript
-declare module '*.css' {
+declare module "*.css" {
   export const classes: Record<string, string>;
   export const css: string;
 }
