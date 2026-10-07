@@ -9,7 +9,7 @@ function simpleHash(str: string) {
   }
   // Convert to 32bit unsigned integer in base 36 and pad with "0" to ensure length is 7.
   return (hash >>> 0).toString(36);
-};
+}
 /**
  * Add a style tag to the document
  * @param code
@@ -38,7 +38,7 @@ export function insertStyleElement(code: string, selector?: string) {
   let target: Element = window.document.head;
   if (selector) {
     style.setAttribute("data-bun-selector", selector);
-    const result = window.document.querySelector(selector)
+    const result = window.document.querySelector(selector);
     if (result) {
       target = result;
     }

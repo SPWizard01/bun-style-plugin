@@ -1,8 +1,5 @@
 import type { OnLoadResult } from "bun";
-import {
-  browserslistToTargets,
-  transform
-} from "lightningcss";
+import { browserslistToTargets, transform } from "lightningcss";
 export type CompileOptions = {
   minify?: boolean;
   cssModules?: boolean;
