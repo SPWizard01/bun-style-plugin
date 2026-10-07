@@ -140,18 +140,18 @@ These examples demonstrate how to use the `insertStyleElement` function to manua
 
 ## Inject and Remove Styles
 
-When using `autoInject: true`, stylesheet modules export `injectInjectedStyles` and `removeInjectedStyles` methods bound to their own `injectedStyles` array. Call the inject method when mounting and return the remove method for cleanup:
+Every stylesheet module exports `injectStyles` and `removeStyles`, bound to that module's CSS and imported styles. `injectStyles` optionally accepts a selector for the element that should contain the styles. Call it when mounting and return `removeStyles` for cleanup:
 
 ```js
-import { injectInjectedStyles, removeInjectedStyles } from "./styles.scss";
+import { injectStyles, removeStyles } from "./styles.scss";
 
 export function launch() {
-  injectInjectedStyles();
-  return removeInjectedStyles;
+  injectStyles();
+  return removeStyles;
 }
 ```
 
-`injectInjectedStyles` is safe to call while the styles are already in the document. With `autoInject: false`, no style elements are created automatically, so use `insertStyleElement` to create and manage them.
+`injectStyles` is safe to call when `autoInject: true` has already inserted the stylesheet. With `autoInject: false`, `injectedStyles` starts empty and is populated when `injectStyles` is called.
 
 ## TypeScript
 
@@ -163,6 +163,9 @@ For CSS modules:
 declare module "*.module.css" {
   export const classes: Record<string, string>;
   export const css: string;
+  export const injectedStyles: HTMLStyleElement[];
+  export function injectStyles(selector?: string): HTMLStyleElement;
+  export function removeStyles(): void;
 }
 ```
 
@@ -172,6 +175,9 @@ For plain CSS files:
 declare module "*.css" {
   export const classes: Record<string, string>;
   export const css: string;
+  export const injectedStyles: HTMLStyleElement[];
+  export function injectStyles(selector?: string): HTMLStyleElement;
+  export function removeStyles(): void;
 }
 ```
 

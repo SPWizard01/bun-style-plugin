@@ -127,16 +127,17 @@ export async function compileCSS(
 
   const imported = imports
     .map((url, i) => {
-      return `import { css as _css${i}, classes as _classes${i}, injectedStyles as _injectedStyles${i} } from "${url}";`;
+      return `import { css as _css${i}, classes as _classes${i}, injectedStyles as _injectedStyles${i}, injectStyles as _injectStyles${i} } from "${url}";`;
     })
     .join("\n");
   const exported = imports.map((_, i) => `_css${i}`).join(" + ");
   let importedClasses = imports.map((_, i) => `_classes${i}`).join(", ...");
   if (!importedClasses) importedClasses = "{}";
   let injectedStyleElements = imports
-    .map((_, i) => `_injectedStyles${i}`)
-    .join(", ...");
-  if (!injectedStyleElements) injectedStyleElements = "";
+    .map((_, i) => `..._injectedStyles${i}`)
+    .join(", ");
+  if (injectedStyleElements) injectedStyleElements += ", ";
+  if (options.autoInject) injectedStyleElements += "injectedElement";
 
   let classExport = JSON.stringify(options.cssModules ? nameMap : {});
   if (importedClasses !== "{}" && options.forwardClassImports) {
@@ -148,29 +149,31 @@ const thisCss = ${cssThroughResolver};
 const resultingCss = ${exported ? `${exported} + ` : ``}thisCss;
 `;
 
-  let autoInject = ``;
-  let autoInjectImport = ``;
+  let autoInject = `let injectedElement;`;
+  const autoInjectImport = `import { insertStyleElement, injectStyles as injectStyleElements, ejectStyles } from "bun-style-plugin-importer";`;
   if (options.autoInject) {
-    autoInjectImport = `import { insertStyleElement } from "bun-style-plugin-importer";`;
-    autoInject = `const injectedElement = insertStyleElement(thisCss);`;
+    autoInject = `let injectedElement = insertStyleElement(thisCss);`;
   }
-  const injectedElement = autoInject ? `injectedElement` : ``;
   const exportContent = `
 export const css = resultingCss;
 export const classes = ${classExport};
-export const injectedStyles = ${injectedStyleElements ? `[...${injectedStyleElements}, ${injectedElement}]` : `[${injectedElement}]`};
-export function injectInjectedStyles() {
-  for (const style of injectedStyles) {
-    if (!style || style.isConnected) continue;
-    const selector = style.getAttribute("data-bun-selector");
-    const target = selector ? window.document.querySelector(selector) : null;
-    (target ?? window.document.head).appendChild(style);
-  }
+export const injectedStyles = [${injectedStyleElements}];
+export function injectStyles(selector) {
+${imports
+  .map(
+    (_, i) => `  _injectStyles${i}(selector);
+  for (const style of _injectedStyles${i}) {
+    if (style && !injectedStyles.includes(style)) injectedStyles.push(style);
+  }`,
+  )
+  .join("\n")}
+  injectedElement = insertStyleElement(thisCss, selector);
+  if (!injectedStyles.includes(injectedElement)) injectedStyles.push(injectedElement);
+  injectStyleElements(injectedStyles);
+  return injectedElement;
 }
-export function removeInjectedStyles() {
-  for (const style of injectedStyles) {
-    style?.remove();
-  }
+export function removeStyles() {
+  ejectStyles(injectedStyles);
 }
   `;
   let defaultExport = ``;

@@ -21,6 +21,16 @@ export function insertStyleElement(code: string, selector?: string) {
   if (importedStyleMap.has(codeHash)) {
     const existingStyle = importedStyleMap.get(codeHash);
     if (existingStyle) {
+      if (selector) {
+        existingStyle.setAttribute("data-bun-selector", selector);
+        const target =
+          window.document.querySelector(selector) ?? window.document.head;
+        if (existingStyle.parentElement !== target) {
+          target.appendChild(existingStyle);
+        }
+      } else {
+        injectStyles([existingStyle]);
+      }
       return existingStyle;
     }
   }
@@ -36,4 +46,24 @@ export function insertStyleElement(code: string, selector?: string) {
   target.appendChild(style);
   importedStyleMap.set(codeHash, style);
   return style;
+}
+
+export function injectStyles(
+  styles: readonly (HTMLStyleElement | null | undefined)[],
+) {
+  for (const style of styles) {
+    if (!style || style.isConnected) continue;
+
+    const selector = style.getAttribute("data-bun-selector");
+    const target = selector ? window.document.querySelector(selector) : null;
+    (target ?? window.document.head).appendChild(style);
+  }
+}
+
+export function ejectStyles(
+  styles: readonly (HTMLStyleElement | null | undefined)[],
+) {
+  for (const style of styles) {
+    style?.remove();
+  }
 }
