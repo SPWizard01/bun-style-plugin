@@ -1,5 +1,4 @@
 
-//@ts-ignore handled by bun plugin, it is an arbitrary import for a method inside importRegistry.js
 import { getImportFromStyleRegistry } from "bun-style-plugin-registry"
 
 export default function bun_css_dependency_resolver(text: string, depenencyTokens: string[]) {
