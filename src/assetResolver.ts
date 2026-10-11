@@ -1,6 +1,4 @@
-
-//@ts-ignore handled by bun plugin, it is an arbitrary import for a method inside importRegistry.js
-import { getImportFromStyleRegistry } from "bun-style-plugin-registry"
+import { getImportFromStyleRegistry } from "bun-style-plugin-registry";
 
 export default function bun_style_resolver(text: string) {
     let newText = text ?? "";
@@ -11,7 +9,7 @@ export default function bun_style_resolver(text: string) {
     );
     const foundResources = text.matchAll(pathSearch);
     for (const iterator of foundResources) {
-      const relPath = iterator["groups"]!.RelativePath;
+      const relPath = iterator["groups"]!.RelativePath!;
       const escapedPath = relPath.replace(/[.*+?^${}()|[\]\\]/g, `\\$&`);
       const replaceRegexp = new RegExp(
         `\\[BUN_RESOLVE\\]${escapedPath}\\[\\/BUN_RESOLVE\\]`
