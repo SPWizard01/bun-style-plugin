@@ -18,38 +18,22 @@ export function insertStyleElement(code: string, selector?: string) {
   const codeHash = simpleHash(code);
   const style = window.document.createElement("style");
   if (!codeHash) return style;
-  if (importedStyleMap.has(codeHash)) {
-    const existingStyle = importedStyleMap.get(codeHash);
-    if (existingStyle) {
-      if (selector) {
-        existingStyle.setAttribute("data-bun-selector", selector);
-        const target =
-          window.document.querySelector(selector) ?? window.document.head;
-        if (existingStyle.parentElement !== target) {
-          target.appendChild(existingStyle);
-        }
-      } else {
-        injectStyles([existingStyle]);
-      }
-      return existingStyle;
-    }
+  const existingStyle = importedStyleMap.get(codeHash);
+  if (existingStyle) {
+    injectStyles([existingStyle]);
+    return existingStyle;
   }
   style.innerHTML = code;
-  let target: Element = window.document.head;
   if (selector) {
     style.setAttribute("data-bun-selector", selector);
-    const result = window.document.querySelector(selector);
-    if (result) {
-      target = result;
-    }
   }
-  target.appendChild(style);
+  injectStyles([style]);
   importedStyleMap.set(codeHash, style);
   return style;
 }
 
 export function injectStyles(
-  styles: readonly (HTMLStyleElement | null | undefined)[],
+  styles: readonly HTMLStyleElement [],
 ) {
   for (const style of styles) {
     if (!style || style.isConnected) continue;
@@ -61,9 +45,9 @@ export function injectStyles(
 }
 
 export function ejectStyles(
-  styles: readonly (HTMLStyleElement | null | undefined)[],
+  styles: readonly HTMLStyleElement [],
 ) {
   for (const style of styles) {
-    style?.remove();
+    style.remove();
   }
 }
