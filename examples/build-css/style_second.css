@@ -1,0 +1,10 @@
+@import url("./style.css");
+
+.secondred {
+  color: red;
+  background-image: url("../assets/bunlogo.svg");
+}
+
+.secondblue {
+  color: blue;
+}

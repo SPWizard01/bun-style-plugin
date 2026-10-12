@@ -1,6 +1,6 @@
 import { classes, css } from './style.module.css';
-import { insertStyleElement } from 'bun-style-plugin/utils';
+import { insertCssIntoDom } from 'bun-style-plugin/utils';
 
-insertStyleElement(css);
+insertCssIntoDom(css);
 
 console.dir('Styles loaded:', classes);

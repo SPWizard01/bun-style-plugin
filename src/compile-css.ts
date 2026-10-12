@@ -124,7 +124,11 @@ export async function compileCSS(
 
   const imported = imports
     .map((url, i) => {
-      return `import { css as _css${i}, classes as _classes${i}, injectedStyles as _injectedStyles${i}, injectStyles as _injectStyles${i} } from "${url}";`;
+      return `import { 
+        css as _css${i}, 
+        classes as _classes${i}, 
+        injectedStyles as _injectedStyles${i},
+      } from "${url}";`;
     })
     .join("\n");
   const exported = imports.map((_, i) => `_css${i}`).join(" + ");
@@ -134,43 +138,44 @@ export async function compileCSS(
     .map((_, i) => `..._injectedStyles${i}`)
     .join(", ");
   if (injectedStyleElements) injectedStyleElements += ", ";
-  if (options.autoInject) injectedStyleElements += "injectedElement";
 
   let classExport = JSON.stringify(options.cssModules ? nameMap : {});
   if (importedClasses !== "{}" && options.forwardClassImports) {
     const restExport = classExport.substring(1, classExport.length - 1);
     classExport = `{...${importedClasses}${restExport ? `, ${restExport}` : ``}}`;
   }
+  const utilsImport = `import { insertCssIntoDom, insertStyles, removeStyles } from "bun-style-plugin-importer";`;
+
   const resultingCss = `
 const thisCss = ${cssThroughResolver};
 const resultingCss = ${exported ? `${exported} + ` : ``}thisCss;
 `;
 
-  let autoInject = `let injectedElement;`;
-  const autoInjectImport = `import { insertStyleElement, injectStyles as injectStyleElements, ejectStyles } from "bun-style-plugin-importer";`;
+  let thisInsertedElement = ``;
   if (options.autoInject) {
-    autoInject = `let injectedElement = insertStyleElement(thisCss);`;
+    thisInsertedElement = `let thisInsertedElement = insertCssIntoDom(thisCss);`;
+    injectedStyleElements += `thisInsertedElement`;
   }
   const exportContent = `
 export const css = resultingCss;
 export const classes = ${classExport};
 export const injectedStyles = [${injectedStyleElements}];
+let elementInserted = false;
 export function injectStyles(selector) {
-${imports
-  .map(
-    (_, i) => `  _injectStyles${i}(selector);
-  for (const style of _injectedStyles${i}) {
-    if (style && !injectedStyles.includes(style)) injectedStyles.push(style);
-  }`,
-  )
-  .join("\n")}
-  injectedElement = insertStyleElement(thisCss, selector);
-  if (!injectedStyles.includes(injectedElement)) injectedStyles.push(injectedElement);
-  injectStyleElements(injectedStyles);
-  return injectedElement;
+${
+  !options.autoInject
+    ? `
+  if(!elementInserted) {
+    elementInserted = true;
+    injectedStyles.push(insertCssIntoDom(thisCss, selector));    
+  }
+`
+    : ``
 }
-export function removeStyles() {
-  ejectStyles(injectedStyles);
+  insertStyles(injectedStyles, selector);
+}
+export function ejectStyles() {
+  removeStyles(injectedStyles);
 }
   `;
   let defaultExport = ``;
@@ -178,7 +183,7 @@ export function removeStyles() {
     case options.defaultExport?.css &&
       options.defaultExport?.classes &&
       options.defaultExport?.injectedStyles:
-      defaultExport = `export default {css, classes, injectedStyles};`;
+      defaultExport = `export default {css, classes, injectedStyles, injectStyles,ejectStyles};`;
       break;
     case options.defaultExport?.css:
       defaultExport = `export default css;`;
@@ -194,10 +199,10 @@ export function removeStyles() {
   let contents = `
 ${styleResolver}
 ${importedUrls}
-${autoInjectImport}
+${utilsImport}
 ${imported}
 ${resultingCss}
-${autoInject}
+${thisInsertedElement}
 ${exportContent}
 ${defaultExport}
   `;

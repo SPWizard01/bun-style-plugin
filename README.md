@@ -104,15 +104,15 @@ This approach streamlines the configuration process, ensuring that your styles a
 
 ## Insert CSS to DOM
 
-The plugin does NOT automatically insert the CSS into the DOM. Instead, it provides the CSS either as a string or as key-value pairs in the case of CSS modules. To incorporate the CSS into the DOM, you need to manually utilize the `insertStyleElement`` function from `bun-style-plugin/utils`.
+The plugin does NOT automatically insert the CSS into the DOM. Instead, it provides the CSS either as a string or as key-value pairs in the case of CSS modules. To incorporate the CSS into the DOM, you need to manually utilize the `insertCssIntoDom`` function from `bun-style-plugin/utils`.
 
 Example for plain CSS:
 
 ```js
-import { insertStyleElement } from "bun-style-plugin/utils";
+import { insertCssIntoDom } from "bun-style-plugin/utils";
 import { css } from "./styles.css";
 
-insertStyleElement(styles);
+insertCssIntoDom(styles);
 ```
 
 Example for CSS modules:
@@ -126,28 +126,28 @@ Example for CSS modules:
 
 ```js
 // app.js
-import { insertStyleElement } from "bun-style-plugin/utils";
+import { insertCssIntoDom } from "bun-style-plugin/utils";
 import { css, classes } from "./styles.module.css";
 
-insertStyleElement(css, classes.blue);
+insertCssIntoDom(css, classes.blue);
 
 export default function render() {
   return `<div class="${classes.blue}">Hello World</div>`;
 }
 ```
 
-These examples demonstrate how to use the `insertStyleElement` function to manually insert CSS into the DOM for both plain CSS files and CSS modules.
+These examples demonstrate how to use the `insertCssIntoDom` function to manually insert CSS into the DOM for both plain CSS files and CSS modules.
 
 ## Inject and Remove Styles
 
-Every stylesheet module exports `injectStyles` and `removeStyles`, bound to that module's CSS and imported styles. `injectStyles` optionally accepts a selector for the element that should contain the styles. Call it when mounting and return `removeStyles` for cleanup:
+Every stylesheet module exports `injectStyles` and `ejectStyles`, bound to that module's CSS and imported styles. `injectStyles` optionally accepts a selector for the element that should contain the styles. Call it when mounting and return `ejectStyles` for cleanup:
 
 ```js
-import { injectStyles, removeStyles } from "./styles.scss";
+import { injectStyles, ejectStyles } from "./styles.scss";
 
 export function launch() {
   injectStyles();
-  return removeStyles;
+  return ejectStyles;
 }
 ```
 
@@ -165,7 +165,7 @@ declare module "*.module.css" {
   export const css: string;
   export const injectedStyles: HTMLStyleElement[];
   export function injectStyles(selector?: string): HTMLStyleElement;
-  export function removeStyles(): void;
+  export function ejectStyles(): void;
 }
 ```
 
@@ -177,7 +177,7 @@ declare module "*.css" {
   export const css: string;
   export const injectedStyles: HTMLStyleElement[];
   export function injectStyles(selector?: string): HTMLStyleElement;
-  export function removeStyles(): void;
+  export function ejectStyles(): void;
 }
 ```
 
