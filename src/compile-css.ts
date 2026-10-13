@@ -8,14 +8,7 @@ export type CompileOptions = {
   forwardClassImports?: boolean;
   autoInject?: boolean;
   outputCss?: boolean;
-  defaultExport?: StyleLoaderDefaultExport;
 };
-
-export interface StyleLoaderDefaultExport {
-  css?: boolean;
-  classes?: boolean;
-  injectedStyles?: boolean;
-}
 
 export async function compileCSS(
   content: string,
@@ -152,49 +145,36 @@ const resultingCss = ${exported ? `${exported} + ` : ``}thisCss;
 `;
 
   let thisInsertedElement = ``;
+  let elementInserted = ``;
+  let insertPreCheckString = ``;
   if (options.autoInject) {
+    // do not inject resulting css if autoInject is true, but do inject the css from this file
+    // this is because the resulting css may be a combination of multiple files, and we only want to inject the css from this file
     thisInsertedElement = `let thisInsertedElement = insertCssIntoDom(thisCss);`;
     injectedStyleElements += `thisInsertedElement`;
+  } else {
+    elementInserted = `let elementInserted = false;`;
+    insertPreCheckString = `
+  if(!elementInserted) {
+    elementInserted = true;
+    injectedStyles.push(insertCssIntoDom(resultingCss, selector));    
+  }
+    `;
   }
   const exportContent = `
 export const css = resultingCss;
 export const classes = ${classExport};
 export const injectedStyles = [${injectedStyleElements}];
-let elementInserted = false;
+${elementInserted}
 export function injectStyles(selector) {
-${
-  !options.autoInject
-    ? `
-  if(!elementInserted) {
-    elementInserted = true;
-    injectedStyles.push(insertCssIntoDom(thisCss, selector));    
-  }
-`
-    : ``
-}
+${insertPreCheckString}
   insertStyles(injectedStyles, selector);
 }
 export function ejectStyles() {
   removeStyles(injectedStyles);
 }
   `;
-  let defaultExport = ``;
-  switch (true) {
-    case options.defaultExport?.css &&
-      options.defaultExport?.classes &&
-      options.defaultExport?.injectedStyles:
-      defaultExport = `export default {css, classes, injectedStyles, injectStyles,ejectStyles};`;
-      break;
-    case options.defaultExport?.css:
-      defaultExport = `export default css;`;
-      break;
-    case options.defaultExport?.classes:
-      defaultExport = `export default classes;`;
-      break;
-    case options.defaultExport?.injectedStyles:
-      defaultExport = `export default injectedStyles;`;
-      break;
-  }
+  const defaultExport = `export default {css, classes, injectedStyles, injectStyles, ejectStyles};`;
 
   let contents = `
 ${styleResolver}
