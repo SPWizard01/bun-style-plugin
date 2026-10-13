@@ -14,39 +14,38 @@ function simpleHash(str: string) {
  * Add a style tag to the document
  * @param code
  */
-export function insertStyleElement(code: string, selector?: string) {
+export function insertCssIntoDom(code: string, selector?: string) {
   const codeHash = simpleHash(code);
   const style = window.document.createElement("style");
   if (!codeHash) return style;
   const existingStyle = importedStyleMap.get(codeHash);
   if (existingStyle) {
-    injectStyles([existingStyle]);
+    insertStyles([existingStyle], selector);
     return existingStyle;
   }
+
   style.innerHTML = code;
-  if (selector) {
-    style.setAttribute("data-bun-selector", selector);
-  }
-  injectStyles([style]);
+
+  insertStyles([style], selector);
   importedStyleMap.set(codeHash, style);
   return style;
 }
 
-export function injectStyles(
-  styles: readonly HTMLStyleElement [],
+export function insertStyles(
+  styles: readonly HTMLStyleElement[],
+  selector?: string,
 ) {
   for (const style of styles) {
     if (!style || style.isConnected) continue;
-
-    const selector = style.getAttribute("data-bun-selector");
+    if (selector) {
+      style.setAttribute("data-bun-selector", selector);
+    }
     const target = selector ? window.document.querySelector(selector) : null;
     (target ?? window.document.head).appendChild(style);
   }
 }
 
-export function ejectStyles(
-  styles: readonly HTMLStyleElement [],
-) {
+export function removeStyles(styles: readonly HTMLStyleElement[]) {
   for (const style of styles) {
     style.remove();
   }

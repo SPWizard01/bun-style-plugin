@@ -1,10 +1,5 @@
 import type { OnLoadResult } from "bun";
-import {
-  transform,
-  browserslistToTargets,
-  type ImportDependency,
-  type UrlDependency,
-} from "lightningcss";
+import { browserslistToTargets, transform } from "lightningcss";
 export type CompileOptions = {
   minify?: boolean;
   cssModules?: boolean;
@@ -13,14 +8,7 @@ export type CompileOptions = {
   forwardClassImports?: boolean;
   autoInject?: boolean;
   outputCss?: boolean;
-  defaultExport?: StyleLoaderDefaultExport;
 };
-
-export interface StyleLoaderDefaultExport {
-  css?: boolean;
-  classes?: boolean;
-  injectedStyles?: boolean;
-}
 
 export async function compileCSS(
   content: string,
@@ -129,64 +117,72 @@ export async function compileCSS(
 
   const imported = imports
     .map((url, i) => {
-      return `import { css as _css${i}, classes as _classes${i}, injectedStyles as _injectedStyles${i} } from "${url}";`;
+      return `import { 
+        css as _css${i}, 
+        classes as _classes${i}, 
+        injectedStyles as _injectedStyles${i},
+      } from "${url}";`;
     })
     .join("\n");
   const exported = imports.map((_, i) => `_css${i}`).join(" + ");
   let importedClasses = imports.map((_, i) => `_classes${i}`).join(", ...");
   if (!importedClasses) importedClasses = "{}";
   let injectedStyleElements = imports
-    .map((_, i) => `_injectedStyles${i}`)
-    .join(", ...");
-  if (!injectedStyleElements) injectedStyleElements = "";
+    .map((_, i) => `..._injectedStyles${i}`)
+    .join(", ");
+  if (injectedStyleElements) injectedStyleElements += ", ";
 
   let classExport = JSON.stringify(options.cssModules ? nameMap : {});
   if (importedClasses !== "{}" && options.forwardClassImports) {
     const restExport = classExport.substring(1, classExport.length - 1);
     classExport = `{...${importedClasses}${restExport ? `, ${restExport}` : ``}}`;
   }
+  const utilsImport = `import { insertCssIntoDom, insertStyles, removeStyles } from "bun-style-plugin-importer";`;
+
   const resultingCss = `
 const thisCss = ${cssThroughResolver};
 const resultingCss = ${exported ? `${exported} + ` : ``}thisCss;
 `;
 
-  let autoInject = ``;
-  let autoInjectImport = ``;
+  let thisInsertedElement = ``;
+  let elementInserted = ``;
+  let insertPreCheckString = ``;
   if (options.autoInject) {
-    autoInjectImport = `import { insertStyleElement } from "bun-style-plugin-importer";`;
-    autoInject = `const injectedElement = insertStyleElement(thisCss);`;
+    // do not inject resulting css if autoInject is true, but do inject the css from this file
+    // this is because the resulting css may be a combination of multiple files, and we only want to inject the css from this file
+    thisInsertedElement = `let thisInsertedElement = insertCssIntoDom(thisCss);`;
+    injectedStyleElements += `thisInsertedElement`;
+  } else {
+    elementInserted = `let elementInserted = false;`;
+    insertPreCheckString = `
+  if(!elementInserted) {
+    elementInserted = true;
+    injectedStyles.push(insertCssIntoDom(resultingCss, selector));    
   }
-  const injectedElement = autoInject ? `injectedElement` : ``;
+    `;
+  }
   const exportContent = `
 export const css = resultingCss;
 export const classes = ${classExport};
-export const injectedStyles = ${injectedStyleElements ? `[...${injectedStyleElements}, ${injectedElement}]` : `[${injectedElement}]`};
+export const injectedStyles = [${injectedStyleElements}];
+${elementInserted}
+export function injectStyles(selector) {
+${insertPreCheckString}
+  insertStyles(injectedStyles, selector);
+}
+export function ejectStyles() {
+  removeStyles(injectedStyles);
+}
   `;
-  let defaultExport = ``;
-  switch (true) {
-    case options.defaultExport?.css &&
-      options.defaultExport?.classes &&
-      options.defaultExport?.injectedStyles:
-      defaultExport = `export default {css, classes, injectedStyles};`;
-      break;
-    case options.defaultExport?.css:
-      defaultExport = `export default css;`;
-      break;
-    case options.defaultExport?.classes:
-      defaultExport = `export default classes;`;
-      break;
-    case options.defaultExport?.injectedStyles:
-      defaultExport = `export default injectedStyles;`;
-      break;
-  }
+  const defaultExport = `export default {css, classes, injectedStyles, injectStyles, ejectStyles};`;
 
   let contents = `
 ${styleResolver}
 ${importedUrls}
-${autoInjectImport}
+${utilsImport}
 ${imported}
 ${resultingCss}
-${autoInject}
+${thisInsertedElement}
 ${exportContent}
 ${defaultExport}
   `;

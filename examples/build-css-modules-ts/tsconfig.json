@@ -9,11 +9,9 @@
     "noEmit": true,
     "composite": true,
     "strict": true,
-    "downlevelIteration": true,
     "skipLibCheck": true,
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
-    "baseUrl": "src",
     "types": [
       "bun-types", // add Bun global
       "./types.d.ts"

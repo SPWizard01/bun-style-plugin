@@ -10,6 +10,6 @@
     "bun-style-plugin": "link:bun-style-plugin"
   },
   "devDependencies": {
-    "bun-types": "latest"
+    "@types/bun": "latest"
   }
 }

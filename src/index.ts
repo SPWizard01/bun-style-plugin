@@ -1,5 +1,5 @@
 import { type BunPlugin, file } from "bun";
-import { compileCSS, type StyleLoaderDefaultExport } from "./compile-css";
+import { compileCSS } from "./compile-css";
 import type { Options as EmbeddedOptions } from "sass-embedded"
 import type { Options as RegularOptions } from "sass"
 import { platform } from "os";
@@ -24,7 +24,6 @@ export type StyleLoaderOptions = {
   forwardClassImports?: boolean;
   autoInject?: boolean;
   outputCss?: boolean;
-  defaultExport?: StyleLoaderDefaultExport;
   /**
    * Use embedded sass compiler or default sass compiler
    * Default: true
@@ -140,7 +139,6 @@ export function styleLoader(options: StyleLoaderOptions = {}): BunPlugin {
           forwardClassImports: opts.forwardClassImports,
           autoInject: opts.autoInject,
           outputCss: opts.outputCss,
-          defaultExport: opts.defaultExport,
         });
         return result;
       });

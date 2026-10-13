@@ -104,15 +104,15 @@ This approach streamlines the configuration process, ensuring that your styles a
 
 ## Insert CSS to DOM
 
-The plugin does NOT automatically insert the CSS into the DOM. Instead, it provides the CSS either as a string or as key-value pairs in the case of CSS modules. To incorporate the CSS into the DOM, you need to manually utilize the `insertStyleElement`` function from `bun-style-plugin/utils`.
+The plugin does NOT automatically insert the CSS into the DOM. Instead, it provides the CSS either as a string or as key-value pairs in the case of CSS modules. To incorporate the CSS into the DOM, you need to manually utilize the `insertCssIntoDom`` function from `bun-style-plugin/utils`.
 
 Example for plain CSS:
 
 ```js
-import { insertStyleElement } from "bun-style-plugin/utils";
+import { insertCssIntoDom } from "bun-style-plugin/utils";
 import { css } from "./styles.css";
 
-insertStyleElement(styles);
+insertCssIntoDom(styles);
 ```
 
 Example for CSS modules:
@@ -126,33 +126,32 @@ Example for CSS modules:
 
 ```js
 // app.js
-import { insertStyleElement } from "bun-style-plugin/utils";
+import { insertCssIntoDom } from "bun-style-plugin/utils";
 import { css, classes } from "./styles.module.css";
 
-insertStyleElement(css, classes.blue);
+insertCssIntoDom(css, classes.blue);
 
 export default function render() {
   return `<div class="${classes.blue}">Hello World</div>`;
 }
 ```
 
-These examples demonstrate how to use the `insertStyleElement` function to manually insert CSS into the DOM for both plain CSS files and CSS modules.
+These examples demonstrate how to use the `insertCssIntoDom` function to manually insert CSS into the DOM for both plain CSS files and CSS modules.
 
-## Inject and Eject Styles
+## Inject and Remove Styles
 
-When using `autoInject: true`, `injectedStyles` contains the style elements created when the stylesheet module is first loaded. Use `injectStyles` when a component mounts and `ejectStyles` during cleanup so the styles are restored when the component mounts again:
+Every stylesheet module exports `injectStyles` and `ejectStyles`, bound to that module's CSS and imported styles. `injectStyles` optionally accepts a selector for the element that should contain the styles. Call it when mounting and return `ejectStyles` for cleanup:
 
 ```js
-import { ejectStyles, injectStyles } from "bun-style-plugin/utils";
-import { injectedStyles } from "./styles.scss";
+import { injectStyles, ejectStyles } from "./styles.scss";
 
 export function launch() {
-  injectStyles(injectedStyles);
-  return () => ejectStyles(injectedStyles);
+  injectStyles();
+  return ejectStyles;
 }
 ```
 
-`injectStyles` is safe to call while the elements are already in the document. With `autoInject: false`, `injectedStyles` does not contain created style elements; use `insertStyleElement` to create them instead.
+`injectStyles` is safe to call when `autoInject: true` has already inserted the stylesheet. With `autoInject: false`, `injectedStyles` starts empty and is populated when `injectStyles` is called.
 
 ## TypeScript
 
@@ -164,6 +163,9 @@ For CSS modules:
 declare module "*.module.css" {
   export const classes: Record<string, string>;
   export const css: string;
+  export const injectedStyles: HTMLStyleElement[];
+  export function injectStyles(selector?: string): HTMLStyleElement;
+  export function ejectStyles(): void;
 }
 ```
 
@@ -173,6 +175,9 @@ For plain CSS files:
 declare module "*.css" {
   export const classes: Record<string, string>;
   export const css: string;
+  export const injectedStyles: HTMLStyleElement[];
+  export function injectStyles(selector?: string): HTMLStyleElement;
+  export function ejectStyles(): void;
 }
 ```
 

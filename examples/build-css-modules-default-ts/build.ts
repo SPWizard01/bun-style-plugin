@@ -6,9 +6,6 @@ Bun.build({
   plugins: [styleLoader({
     cssModules: true,
     autoInject: false,
-    defaultExport: {
-      classes: true,
-    }, 
     forwardClassImports: true
   })],
 });

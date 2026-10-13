@@ -10,9 +10,6 @@
     "bun-style-plugin": "link:bun-style-plugin"
   },
   "devDependencies": {
-    "bun-types": "latest"
-  },
-  "peerDependencies": {
-    "typescript": "^5.0.0"
+    "@types/bun": "^1.4.3"
   }
 }

@@ -10,6 +10,6 @@
   },
   "devDependencies": {
     "@fluentui/react": "^8.122.9",
-    "@types/bun": "^1.2.2"
+    "@types/bun": "latest"
   }
 }
